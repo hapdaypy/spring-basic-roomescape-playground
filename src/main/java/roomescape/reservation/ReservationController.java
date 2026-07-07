@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 import roomescape.auth.LoginMember;
 import roomescape.auth.LoginMemberInfo;
@@ -36,6 +37,7 @@ public class ReservationController {
     @PostMapping("/reservations")
     public ResponseEntity create(
             @RequestBody ReservationRequest reservationRequest,
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
             @LoginMember Optional<LoginMemberInfo> loginMember
     ) {
         if (reservationRequest.getDate() == null
@@ -43,7 +45,7 @@ public class ReservationController {
                 || reservationRequest.getTime() == null) {
             return ResponseEntity.badRequest().build();
         }
-        ReservationResponse reservation = reservationService.save(reservationRequest, loginMember);
+        ReservationResponse reservation = reservationService.save(reservationRequest, loginMember, Optional.ofNullable(idempotencyKey));
 
         return ResponseEntity.created(URI.create("/reservations/" + reservation.getId())).body(reservation);
     }
